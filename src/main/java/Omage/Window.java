@@ -4,6 +4,8 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
+import java.lang.reflect.Constructor;
+
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -16,19 +18,10 @@ public class Window {
     private String title;
     private long glfwWindow;
 
-    private static Window window = null;
-
-    private Window() {
-        this.height = 600;
-        this.width = 800;
-        this.title = "Mario";
-    }
-
-    public static Window get() {
-        if (Window.window == null) {
-            Window.window = new Window();
-        }
-        return Window.window;
+    public Window() {
+        width = 800;
+        height = 600;
+        title = "Mario";
     }
 
     public void run() {
@@ -43,14 +36,17 @@ public class Window {
 
         // Terminate GLFW and free the error callback
         glfwTerminate();
-        glfwSetErrorCallback(null).free();
+        try (var callback = glfwSetErrorCallback(null)) {
+            if (callback != null)
+                callback.free();
+        }
     }
 
     private void init() {
         // Setup error callback
         GLFWErrorCallback.createPrint(System.err).set();
         // Initialize GLFW
-        if ( !glfwInit() )
+        if (!glfwInit())
             throw new IllegalStateException("Unable to initialize GLFW");
 
         // Configure GLFW
@@ -61,7 +57,7 @@ public class Window {
 
         // Create the window
         glfwWindow = glfwCreateWindow(this.width, this.height, this.title, NULL, NULL);
-        if ( glfwWindow == NULL )
+        if (glfwWindow == NULL)
             throw new IllegalStateException("Failed to create the GLFW window");
 
         // Make the OpenGL context current
@@ -80,7 +76,7 @@ public class Window {
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
-        while ( !glfwWindowShouldClose(glfwWindow) ) {
+        while (!glfwWindowShouldClose(glfwWindow)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
             glfwSwapBuffers(glfwWindow); // swap the color buffers
